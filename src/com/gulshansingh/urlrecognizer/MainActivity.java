@@ -5,10 +5,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -20,6 +23,8 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -113,11 +118,22 @@ public class MainActivity extends Activity {
 		String parsedText = parseText(b);
 		mResultStringTextView.setText("Result: " + parsedText);
 
-		String url = findUrl(parsedText);
-		if (url != null) {
-			Toast.makeText(this, url, Toast.LENGTH_LONG).show();
+		List<String> urls = findUrls(parsedText);
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		if (!urls.isEmpty()) {
+			builder.setTitle("URLs");
+
+			ListView urlList = new ListView(this);
+			ArrayAdapter<String> urlAdapter = new ArrayAdapter<String>(this,
+					android.R.layout.simple_list_item_1, android.R.id.text1,
+					urls);
+			urlList.setAdapter(urlAdapter);
+			builder.setView(urlList);
+			builder.create().show();
 		} else {
-			Toast.makeText(this, "No URL found", Toast.LENGTH_LONG).show();
+			builder.setTitle("No URL found");
+			builder.setMessage("No URL found. Valid URLs start with http or https. If the URL does begin with this, try taking a picture again.");
+			builder.create().show();
 		}
 	}
 
@@ -127,9 +143,11 @@ public class MainActivity extends Activity {
 	 */
 	private void prepareBitmap(Bitmap b) throws IOException {
 		/*
-		 * TODO: There is a bug in Android that affects this code for some devices:
-		 * http://stackoverflow.com/questions/8450539/images-taken-with-action-image-capture-always-returns-1-for-exifinterface-tag-or
-		 * We need to implement the workaround.
+		 * TODO: There is a bug in Android that affects this code for some
+		 * devices:
+		 * http://stackoverflow.com/questions/8450539/images-taken-with-
+		 * action-image-capture-always-returns-1-for-exifinterface-tag-or We
+		 * need to implement the workaround.
 		 */
 		ExifInterface exif = new ExifInterface(mCaptureFile.getAbsolutePath());
 		int exifOrientation = exif
@@ -174,15 +192,16 @@ public class MainActivity extends Activity {
 		return text;
 	}
 
-	private String findUrl(String text) {
+	private List<String> findUrls(String text) {
 		String regex = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
 		Pattern urlPattern = Pattern.compile(regex);
 		Matcher m = urlPattern.matcher(text);
-		if (m.find()) {
-			return m.group();
-		} else {
-			return null;
+		List<String> urls = new ArrayList<String>();
+		while (m.find()) {
+			urls.add(m.group());
 		}
+
+		return urls;
 	}
 
 	public void captureImageClicked(View v) {
@@ -198,8 +217,8 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		/*
-		 * TODO: Get bitmap directly from intent data if possible. This doesn't work on
-		 * Nexus and Galaxy devices, but may work on other devices.
+		 * TODO: Get bitmap directly from intent data if possible. This doesn't
+		 * work on Nexus and Galaxy devices, but may work on other devices.
 		 */
 		if (requestCode == INTENT_ID_CAPTURE_IMAGE) {
 			switch (resultCode) {
