@@ -20,19 +20,20 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.googlecode.tesseract.android.TessBaseAPI;
 
-public class MainActivity extends Activity {
+public class MainActivity extends FragmentActivity {
 
 	private static final String APP_NAME = "UrlRecognizer";
 	private static final int INTENT_ID_CAPTURE_IMAGE = 0;
@@ -142,14 +143,12 @@ public class MainActivity extends Activity {
 		List<String> urls = findUrls(parsedText);
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		if (!urls.isEmpty()) {
-			builder.setTitle("URLs");
-
-			ListView urlList = new ListView(this);
-			ArrayAdapter<String> urlAdapter = new ArrayAdapter<String>(this,
-					R.layout.url_list_row, R.id.url_edit_text, urls);
-			urlList.setAdapter(urlAdapter);
-			builder.setView(urlList);
-			builder.create().show();
+			UrlListDialogFragment.setUrls(urls);
+			UrlListDialogFragment dialog = new UrlListDialogFragment();
+			FragmentTransaction ft = getSupportFragmentManager()
+					.beginTransaction();
+			ft.add(dialog, null);
+			ft.commitAllowingStateLoss();
 		} else {
 			builder.setTitle("No URL found");
 			builder.setMessage("No URL found. Valid URLs start with http or https. If the URL does begin with this, try taking a picture again.");
