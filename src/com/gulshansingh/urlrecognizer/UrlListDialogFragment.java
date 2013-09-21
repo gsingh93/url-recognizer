@@ -22,7 +22,7 @@ public class UrlListDialogFragment extends DialogFragment {
 		if (urls == null) {
 			throw new NullPointerException();
 		}
-		
+
 		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 		builder.setTitle("URLs");
 

@@ -18,6 +18,7 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:background="@drawable/ic_go"
-        android:contentDescription="@string/go" />
+        android:contentDescription="@string/go"
+        android:onClick="goToUrlClicked" />
 
 </LinearLayout>
