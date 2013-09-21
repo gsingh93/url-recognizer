@@ -5,6 +5,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -108,7 +110,15 @@ public class MainActivity extends Activity {
 			e.printStackTrace();
 		}
 
-		mResultStringTextView.setText("Result: " + parseText(b));
+		String parsedText = parseText(b);
+		mResultStringTextView.setText("Result: " + parsedText);
+
+		String url = findUrl(parsedText);
+		if (url != null) {
+			Toast.makeText(this, url, Toast.LENGTH_LONG).show();
+		} else {
+			Toast.makeText(this, "No URL found", Toast.LENGTH_LONG).show();
+		}
 	}
 
 	/*
@@ -162,6 +172,17 @@ public class MainActivity extends Activity {
 		baseApi.end();
 
 		return text;
+	}
+
+	private String findUrl(String text) {
+		String regex = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
+		Pattern urlPattern = Pattern.compile(regex);
+		Matcher m = urlPattern.matcher(text);
+		if (m.find()) {
+			return m.group();
+		} else {
+			return null;
+		}
 	}
 
 	public void captureImageClicked(View v) {
