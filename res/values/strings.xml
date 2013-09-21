@@ -4,5 +4,8 @@
     <string name="app_name">URL Recognizer</string>
     <string name="capture_image">Capture Image</string>
     <string name="go">Go</string>
+    <string name="settings">Settings</string>
+    <string name="show_on_fail">Show Full Text On Fail</string>
+    <string name="show_on_fail_summ">If no URLs found, still show dialog with text</string>
 
 </resources>
