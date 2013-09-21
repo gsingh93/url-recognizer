@@ -125,8 +125,7 @@ public class MainActivity extends Activity {
 
 			ListView urlList = new ListView(this);
 			ArrayAdapter<String> urlAdapter = new ArrayAdapter<String>(this,
-					android.R.layout.simple_list_item_1, android.R.id.text1,
-					urls);
+					R.layout.url_list_row, R.id.url_edit_text, urls);
 			urlList.setAdapter(urlAdapter);
 			builder.setView(urlList);
 			builder.create().show();
@@ -193,7 +192,7 @@ public class MainActivity extends Activity {
 	}
 
 	private List<String> findUrls(String text) {
-		String regex = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
+		String regex = "(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
 		Pattern urlPattern = Pattern.compile(regex);
 		Matcher m = urlPattern.matcher(text);
 		List<String> urls = new ArrayList<String>();

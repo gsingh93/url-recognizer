@@ -3,5 +3,6 @@
 
     <string name="app_name">URL Recognizer</string>
     <string name="capture_image">Capture Image</string>
+    <string name="go">Go</string>
 
 </resources>
