@@ -116,6 +116,11 @@ public class MainActivity extends Activity {
 	 * order to work with the Tesseract API
 	 */
 	private void prepareBitmap(Bitmap b) throws IOException {
+		/*
+		 * TODO: There is a bug in Android that affects this code for some devices:
+		 * http://stackoverflow.com/questions/8450539/images-taken-with-action-image-capture-always-returns-1-for-exifinterface-tag-or
+		 * We need to implement the workaround.
+		 */
 		ExifInterface exif = new ExifInterface(mCaptureFile.getAbsolutePath());
 		int exifOrientation = exif
 				.getAttributeInt(ExifInterface.TAG_ORIENTATION,
