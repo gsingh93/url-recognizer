@@ -1,0 +1,3 @@
+[submodule "contrib/tess"]
+	path = contrib/tess
+	url = https://github.com/rmtheis/tess-two
