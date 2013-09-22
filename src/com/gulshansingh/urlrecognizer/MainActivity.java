@@ -11,13 +11,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import android.app.Activity;
-import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -41,6 +42,7 @@ public class MainActivity extends FragmentActivity {
 	private static final int INTENT_ID_CAPTURE_IMAGE = 0;
 
 	private File mCaptureFile;
+	private ProgressDialog mProgress;
 
 	private TextView mResultStringTextView;
 
@@ -111,51 +113,6 @@ public class MainActivity extends FragmentActivity {
 		System.out.println("file: " + file);
 
 		return file;
-	}
-
-	private void onPhotoTaken() {
-		if (mCaptureFile == null) {
-			throw new NullPointerException("Decoded bitmap is null");
-		}
-
-		/*
-		 * TODO: This fails for images with low compression ratios. We need to
-		 * choose the sample size dynamically.
-		 */
-		BitmapFactory.Options options = new BitmapFactory.Options();
-		options.inSampleSize = 4;
-
-		System.out.println("onPhotoTaken: " + mCaptureFile);
-		Bitmap b = BitmapFactory.decodeFile(mCaptureFile.getAbsolutePath(),
-				options);
-
-		if (b == null) {
-			throw new NullPointerException("Decoded bitmap is null");
-		}
-
-		try {
-			prepareBitmap(b);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		String parsedText = parseText(b);
-		mResultStringTextView.setText("Result: " + parsedText);
-
-		List<String> urls = findUrls(parsedText);
-		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		if (!urls.isEmpty()) {
-			UrlListDialogFragment.setUrls(urls);
-			UrlListDialogFragment dialog = new UrlListDialogFragment();
-			FragmentTransaction ft = getSupportFragmentManager()
-					.beginTransaction();
-			ft.add(dialog, null);
-			ft.commitAllowingStateLoss();
-		} else {
-			builder.setTitle("No URL found");
-			builder.setMessage("No URL found. Valid URLs start with http or https. If the URL does begin with this, try taking a picture again.");
-			builder.create().show();
-		}
 	}
 
 	/*
@@ -234,12 +191,12 @@ public class MainActivity extends FragmentActivity {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public void goToUrlClicked(View v) {
 		LinearLayout layout = (LinearLayout) v.getParent();
 		EditText editText = (EditText) layout.getChildAt(0);
 		String url = editText.getText().toString();
-		
+
 		Intent i = new Intent(Intent.ACTION_VIEW);
 		i.setData(Uri.parse(url));
 		startActivity(i);
@@ -254,9 +211,55 @@ public class MainActivity extends FragmentActivity {
 		if (requestCode == INTENT_ID_CAPTURE_IMAGE) {
 			switch (resultCode) {
 			case Activity.RESULT_OK:
-				onPhotoTaken();
+				if (mCaptureFile == null) {
+					throw new NullPointerException("Capture file is null");
+				}
+				mProgress = ProgressDialog.show(MainActivity.this,
+						"Processing", "Please wait while we process the image");
+				new DecodeBitmapTask().execute();
 				break;
 			}
+		}
+	}
+
+	private class DecodeBitmapTask extends AsyncTask<Void, Void, Bitmap> {
+		@Override
+		protected Bitmap doInBackground(Void... args) {
+			BitmapFactory.Options options = new BitmapFactory.Options();
+			options.inSampleSize = 4;
+
+			return BitmapFactory.decodeFile(mCaptureFile.getAbsolutePath(),
+					options);
+		}
+
+		@Override
+		protected void onProgressUpdate(Void... progress) {
+		}
+
+		@Override
+		protected void onPostExecute(Bitmap b) {
+			mProgress.dismiss();
+			if (b == null) {
+				throw new NullPointerException("Decoded bitmap is null");
+			}
+
+			try {
+				prepareBitmap(b);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+			String parsedText = parseText(b);
+			mResultStringTextView.setText("Result: " + parsedText);
+
+			List<String> urls = findUrls(parsedText);
+
+			UrlListDialogFragment dialog = UrlListDialogFragment
+					.newInstance(urls);
+			FragmentTransaction ft = getSupportFragmentManager()
+					.beginTransaction();
+			ft.add(dialog, null);
+			ft.commitAllowingStateLoss();
 		}
 	}
 }
