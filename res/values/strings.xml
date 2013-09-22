@@ -5,7 +5,11 @@
     <string name="capture_image">Capture Image</string>
     <string name="go">Go</string>
     <string name="settings">Settings</string>
-    <string name="show_on_fail">Show Full Text On Fail</string>
+    <string name="show_on_fail">Show Text</string>
     <string name="show_on_fail_summ">If no URLs found, still show dialog with text</string>
+    <string name="accept">Save</string>
+    <string name="num_history">URLs to keep</string>
+    <string name="num_history_summ">How many URLs to store in the history (max 100)</string>
+    <string name="history">History</string>
 
 </resources>

@@ -18,6 +18,15 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:background="@drawable/ic_go"
-        android:contentDescription="@string/go" />
+        android:contentDescription="@string/go"
+        android:onClick="goToUrlClicked" />
+       <ImageButton
+        android:id="@+id/accept_url"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="@drawable/ic_accept"
+        android:contentDescription="@string/accept"
+        android:onClick="acceptUrlClicked" />
 
 </LinearLayout>

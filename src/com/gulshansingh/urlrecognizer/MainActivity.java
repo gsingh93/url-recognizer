@@ -6,38 +6,48 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import android.app.Activity;
-import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.googlecode.tesseract.android.TessBaseAPI;
 
-public class MainActivity extends Activity {
+public class MainActivity extends FragmentActivity {
 
 	private static final String APP_NAME = "UrlRecognizer";
 	private static final int INTENT_ID_CAPTURE_IMAGE = 0;
+	public static final String PREFS_NAME = "PrefsFile";
 
 	private File mCaptureFile;
+	private ProgressDialog mProgress;
+	UrlListDialogFragment mUrlDialog;
 
 	private TextView mResultStringTextView;
 
@@ -52,24 +62,27 @@ public class MainActivity extends Activity {
 			e.printStackTrace();
 		}
 	}
-	
+
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-	    MenuInflater inflater = getMenuInflater();
-	    inflater.inflate(R.menu.main_menu, menu);
-	    return true;
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.main_menu, menu);
+		return true;
 	}
-	
+
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-	    // Handle item selection
-	    switch (item.getItemId()) {
-	        case R.id.settings:
-	            startActivity(new Intent(this, PrefsActivity.class));
-	            return true;
-	        default:
-	            return super.onOptionsItemSelected(item);
-	    }
+		// Handle item selection
+		switch (item.getItemId()) {
+		case R.id.settings:
+			startActivity(new Intent(this, PrefsActivity.class));
+			return true;
+		case R.id.history:
+			startActivity(new Intent(this, ListHistory.class));
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		}
 	}
 
 	private void installTrainingData() throws IOException {
@@ -108,53 +121,6 @@ public class MainActivity extends Activity {
 		System.out.println("file: " + file);
 
 		return file;
-	}
-
-	private void onPhotoTaken() {
-		if (mCaptureFile == null) {
-			throw new NullPointerException("Decoded bitmap is null");
-		}
-
-		/*
-		 * TODO: This fails for images with low compression ratios. We need to
-		 * choose the sample size dynamically.
-		 */
-		BitmapFactory.Options options = new BitmapFactory.Options();
-		options.inSampleSize = 4;
-
-		System.out.println("onPhotoTaken: " + mCaptureFile);
-		Bitmap b = BitmapFactory.decodeFile(mCaptureFile.getAbsolutePath(),
-				options);
-
-		if (b == null) {
-			throw new NullPointerException("Decoded bitmap is null");
-		}
-
-		try {
-			prepareBitmap(b);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		String parsedText = parseText(b);
-		mResultStringTextView.setText("Result: " + parsedText);
-
-		List<String> urls = findUrls(parsedText);
-		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		if (!urls.isEmpty()) {
-			builder.setTitle("URLs");
-
-			ListView urlList = new ListView(this);
-			ArrayAdapter<String> urlAdapter = new ArrayAdapter<String>(this,
-					R.layout.url_list_row, R.id.url_edit_text, urls);
-			urlList.setAdapter(urlAdapter);
-			builder.setView(urlList);
-			builder.create().show();
-		} else {
-			builder.setTitle("No URL found");
-			builder.setMessage("No URL found. Valid URLs start with http or https. If the URL does begin with this, try taking a picture again.");
-			builder.create().show();
-		}
 	}
 
 	/*
@@ -234,6 +200,40 @@ public class MainActivity extends Activity {
 		}
 	}
 
+	public void goToUrlClicked(View v) {
+		LinearLayout layout = (LinearLayout) v.getParent();
+		EditText editText = (EditText) layout.getChildAt(0);
+		String url = editText.getText().toString();
+		
+		mUrlDialog.dismiss();
+		saveUrl(url);
+		Intent i = new Intent(Intent.ACTION_VIEW);
+		i.setData(Uri.parse(url));
+		startActivity(i);
+	}
+
+	public void acceptUrlClicked(View v) {
+		LinearLayout layout = (LinearLayout) v.getParent();
+		EditText editText = (EditText) layout.getChildAt(0);
+		String url = editText.getText().toString();
+
+		mUrlDialog.dismiss();
+		saveUrl(url);
+	}
+
+	public void saveUrl(String url) {
+		SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+		Set<String> history = settings.getStringSet("url_history",
+				new LinkedHashSet<String>());
+		if (history.size() < settings.getInt("num_history", 20)) {
+			history.add(url);
+			SharedPreferences.Editor editor = settings.edit();
+			editor.putStringSet("url_history", history);
+			editor.commit();
+		}
+		// save to cloud
+	}
+
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		/*
@@ -243,9 +243,55 @@ public class MainActivity extends Activity {
 		if (requestCode == INTENT_ID_CAPTURE_IMAGE) {
 			switch (resultCode) {
 			case Activity.RESULT_OK:
-				onPhotoTaken();
+				if (mCaptureFile == null) {
+					throw new NullPointerException("Capture file is null");
+				}
+				mProgress = ProgressDialog.show(MainActivity.this,
+						"Processing", "Please wait while we process the image");
+				new DecodeBitmapTask().execute();
 				break;
 			}
+		}
+	}
+
+	private class DecodeBitmapTask extends AsyncTask<Void, Void, Bitmap> {
+		@Override
+		protected Bitmap doInBackground(Void... args) {
+			BitmapFactory.Options options = new BitmapFactory.Options();
+			options.inSampleSize = 4;
+
+			return BitmapFactory.decodeFile(mCaptureFile.getAbsolutePath(),
+					options);
+		}
+
+		@Override
+		protected void onProgressUpdate(Void... progress) {
+		}
+
+		@Override
+		protected void onPostExecute(Bitmap b) {
+			mProgress.dismiss();
+			if (b == null) {
+				throw new NullPointerException("Decoded bitmap is null");
+			}
+
+			try {
+				prepareBitmap(b);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+			String parsedText = parseText(b);
+			mResultStringTextView.setText("Result: " + parsedText);
+
+			List<String> urls = findUrls(parsedText);
+
+			mUrlDialog = UrlListDialogFragment
+					.newInstance(urls);
+			FragmentTransaction ft = getSupportFragmentManager()
+					.beginTransaction();
+			ft.add(mUrlDialog, null);
+			ft.commitAllowingStateLoss();
 		}
 	}
 }
