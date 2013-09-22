@@ -4,12 +4,14 @@ import java.util.List;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 public class UrlListDialogFragment extends DialogFragment {
+	public static final String PREFS_NAME = "PrefsFile";
 
 	private static List<String> urls;
 

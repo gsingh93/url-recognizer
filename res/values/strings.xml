@@ -10,5 +10,6 @@
     <string name="accept">Save</string>
     <string name="num_history">URLs to keep</string>
     <string name="num_history_summ">How many URLs to store in the history (max 100)</string>
+    <string name="history">History</string>
 
 </resources>

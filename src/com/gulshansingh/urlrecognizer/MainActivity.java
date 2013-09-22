@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -47,6 +47,7 @@ public class MainActivity extends FragmentActivity {
 
 	private File mCaptureFile;
 	private ProgressDialog mProgress;
+	UrlListDialogFragment mUrlDialog;
 
 	private TextView mResultStringTextView;
 
@@ -75,6 +76,9 @@ public class MainActivity extends FragmentActivity {
 		switch (item.getItemId()) {
 		case R.id.settings:
 			startActivity(new Intent(this, PrefsActivity.class));
+			return true;
+		case R.id.history:
+			startActivity(new Intent(this, ListHistory.class));
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);
@@ -200,25 +204,28 @@ public class MainActivity extends FragmentActivity {
 		LinearLayout layout = (LinearLayout) v.getParent();
 		EditText editText = (EditText) layout.getChildAt(0);
 		String url = editText.getText().toString();
-
+		
+		mUrlDialog.dismiss();
+		saveUrl(url);
 		Intent i = new Intent(Intent.ACTION_VIEW);
 		i.setData(Uri.parse(url));
 		startActivity(i);
-		saveUrl(url);
 	}
 
 	public void acceptUrlClicked(View v) {
 		LinearLayout layout = (LinearLayout) v.getParent();
 		EditText editText = (EditText) layout.getChildAt(0);
 		String url = editText.getText().toString();
+
+		mUrlDialog.dismiss();
 		saveUrl(url);
 	}
 
 	public void saveUrl(String url) {
 		SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
 		Set<String> history = settings.getStringSet("url_history",
-				new HashSet<String>());
-		if (history.size() < settings.getInt("history_size", 20)) {
+				new LinkedHashSet<String>());
+		if (history.size() < settings.getInt("num_history", 20)) {
 			history.add(url);
 			SharedPreferences.Editor editor = settings.edit();
 			editor.putStringSet("url_history", history);
@@ -279,11 +286,11 @@ public class MainActivity extends FragmentActivity {
 
 			List<String> urls = findUrls(parsedText);
 
-			UrlListDialogFragment dialog = UrlListDialogFragment
+			mUrlDialog = UrlListDialogFragment
 					.newInstance(urls);
 			FragmentTransaction ft = getSupportFragmentManager()
 					.beginTransaction();
-			ft.add(dialog, null);
+			ft.add(mUrlDialog, null);
 			ft.commitAllowingStateLoss();
 		}
 	}
