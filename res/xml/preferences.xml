@@ -1,8 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-  <CheckBoxPreference
-        android:key="pref_show_on_fail"
-        android:title="@string/show_on_fail"
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <CheckBoxPreference
+        android:defaultValue="true"
+        android:key="show_on_fail"
         android:summary="@string/show_on_fail_summ"
-        android:defaultValue="true" />
+        android:title="@string/show_on_fail" />
+
+    <EditTextPreference
+        android:defaultValue="20"
+        android:key="num_history"
+        android:title="@string/num_history" 
+        android:summary="@string/num_history_summ"
+        android:inputType="number"
+        />
+
 </PreferenceScreen>

@@ -6,13 +6,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -40,6 +43,7 @@ public class MainActivity extends FragmentActivity {
 
 	private static final String APP_NAME = "UrlRecognizer";
 	private static final int INTENT_ID_CAPTURE_IMAGE = 0;
+	public static final String PREFS_NAME = "PrefsFile";
 
 	private File mCaptureFile;
 	private ProgressDialog mProgress;
@@ -200,6 +204,27 @@ public class MainActivity extends FragmentActivity {
 		Intent i = new Intent(Intent.ACTION_VIEW);
 		i.setData(Uri.parse(url));
 		startActivity(i);
+		saveUrl(url);
+	}
+
+	public void acceptUrlClicked(View v) {
+		LinearLayout layout = (LinearLayout) v.getParent();
+		EditText editText = (EditText) layout.getChildAt(0);
+		String url = editText.getText().toString();
+		saveUrl(url);
+	}
+
+	public void saveUrl(String url) {
+		SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+		Set<String> history = settings.getStringSet("url_history",
+				new HashSet<String>());
+		if (history.size() < settings.getInt("history_size", 20)) {
+			history.add(url);
+			SharedPreferences.Editor editor = settings.edit();
+			editor.putStringSet("url_history", history);
+			editor.commit();
+		}
+		// save to cloud
 	}
 
 	@Override
